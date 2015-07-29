@@ -1,0 +1,152 @@
+<html>
+<head>
+  <title>MQTT DEMO</title>
+  <link rel="stylesheet" href="css/signature-pad.css">
+</head>
+<body>
+
+<div id="signature-pad" class="m-signature-pad">
+    <div class="m-signature-pad--body">
+      <canvas></canvas>
+    </div>
+    <div class="m-signature-pad--footer">
+      <div class="description">Sign above</div>
+      <button class="button clear" data-action="clear">Clear</button>
+      <button class="button save" data-action="save">Save</button>
+    </div>
+  </div>
+  
+ <script src="js/signature_pad2.js"></script>
+  <script src="js/app.js"></script> 
+
+<script src="js/mqttws31.js"></script>
+<script>
+
+/** Websocket API. */
+var client;
+var connectOptions;
+
+function connect() {   
+    try {
+      var clientId = "ID" + Math.random();
+        // client = new Messaging.Client("127.0.0.1", 8080, clientId);
+        client = new Messaging.Client("112.223.76.75", 1883, clientId);
+    
+        client.startTrace();
+        client.onMessageArrived = onMessageArrived;
+        client.onConnectionLost = onConnectionLost;
+    
+        // Set values from the connect form.
+        var connectForm = document.getElementById('connect');
+        var connectOptions = new Object();
+        connectOptions.timeout=5;
+        connectOptions.cleanSession = true;
+        connectOptions.keepAliveInterval = 60;
+        
+        // connectOptions.hosts = hosts;
+        // connectOptions.ports = ports;
+        // connectOptions.useSSL = connectForm.ssl.checked;
+        connectOptions.onSuccess = function (responseObject) {
+            console.log("connect Ok");
+            subscribe();
+        };
+        connectOptions.onFailure = function (responseObject) { 
+          console.log("connect onFailure");
+          alert(responseObject.errorMessage);
+        };
+      
+        client.connect(connectOptions);
+
+
+    
+    } catch (error) {
+      console.log("error");
+        alert(error.message);
+    }
+} 
+
+function subscribe() {
+  try {
+      var options = {qos:0, 
+                     onFailure: function(responseObject) {alert(responseObject.errorMessage);}};
+      client.subscribe("mqtt/demo", options);
+    } catch (error) {
+      console.log("subscribe error");
+      alert(error.message);
+    } 
+    console.log("subscribe Ok");
+}
+
+function doSend(msg) {
+  try {
+        message = new Messaging.Message(msg);
+   
+        message.destinationName = "mqtt/demo";
+        message.qos = 0;  
+        client.send(message);
+  } catch (error) {
+        alert(error.message);
+    } 
+    console.log("doSend Ok");
+}
+
+function onMessageArrived(message) {
+    console.log("onMessageArrived Ok");
+    var data = ""+ message.payloadString;
+        var datas = data.split(',');
+        var widTemp = datas[0] *1;
+        console.log("widTemp::"+ widTemp);
+
+
+        if (widTemp != wid) {
+          console.log("widTemp Not");
+          if (datas[1] === "strokeDraw") {
+            var x = datas[2] * 1;
+            var y = datas[3] * 1;
+            var size = datas[4] * 1;
+            signaturePad._strokeDraw2(x, y, size);
+            console.log("strokeDraw Ok");
+
+          } else if (datas[1] === "strokeBegin") {
+            var x = datas[2] * 1;
+            var y = datas[3] * 1;
+            signaturePad._strokeBegin2(x, y);
+            console.log("strokeBegin Ok");
+  
+          } else if (datas[1] === "strokeEnd") {
+            signaturePad._strokeEnd2();
+            console.log("strokeEnd Ok");
+
+
+          } else if (datas[1] === "strokeUpdate") {
+            var x = datas[2] * 1;
+            var y = datas[3] * 1;
+            signaturePad._strokeUpdate2(x, y);
+            console.log("strokeUpdate Ok");
+
+          // } else if (datas[1] === "clear") {
+          //   signaturePad.clear();
+          //   console.log("clear Ok");
+
+          };
+        };
+
+        if (datas[1] === "clear") {
+          signaturePad.clear();
+          console.log("clear Ok");
+        };
+}
+
+function onConnectionLost(responseObject) {
+    var form = document.getElementById('connect');
+    console.log("onConnectionLost Ok");
+    if (responseObject.errorCode !== 0)
+      alert(client.clientId+" disconnected error code="+responseObject.errorCode+" reason="+responseObject.errorMessage);
+}
+
+
+connect();
+ 
+</script>
+</body>
+</html>

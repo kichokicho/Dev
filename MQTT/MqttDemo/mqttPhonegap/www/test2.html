@@ -1,0 +1,79 @@
+<html>
+<head>
+  <title>test Ws mqtt.js</title>
+  <link rel="stylesheet" href="css/signature-pad.css">
+</head>
+<body>
+
+<div id="signature-pad" class="m-signature-pad">
+    <div class="m-signature-pad--body">
+      <canvas></canvas>
+    </div>
+    <div class="m-signature-pad--footer">
+      <div class="description">Sign above</div>
+      <button class="button clear" data-action="clear">Clear</button>
+      <button class="button save" data-action="save">Save</button>
+    </div>
+  </div>
+  
+ <script src="js/signature_pad.js"></script>
+  <script src="js/app.js"></script> 
+
+<script src="js/browserMqtt.js"></script>
+<script>
+      // var client = mqtt.connect(); // you add a ws:// url here
+      var client = mqtt.connect("tcp://127.0.0.1:8080"); 
+      // var client = mqtt.connect([{ host: '192.168.0.60', port: 1883 }]); 
+      client.subscribe("mqtt/demo");
+
+      client.on("message", function(topic, payload) {
+        // console.log("topic:" + topic + "payload::" + payload);
+        var data = ""+payload;
+        var datas = data.split(',');
+        var widTemp = datas[0] *1;
+        console.log("widTemp::"+ widTemp);
+
+
+        if (widTemp != wid) {
+          console.log("widTemp Not");
+          if (datas[1] === "strokeDraw") {
+            var x = datas[2] * 1;
+            var y = datas[3] * 1;
+            var size = datas[4] * 1;
+            signaturePad._strokeDraw2(x, y, size);
+            console.log("strokeDraw Ok");
+
+          } else if (datas[1] === "strokeBegin") {
+            var x = datas[2] * 1;
+            var y = datas[3] * 1;
+            signaturePad._strokeBegin2(x, y);
+            console.log("strokeBegin Ok");
+  
+          } else if (datas[1] === "strokeEnd") {
+            signaturePad._strokeEnd2();
+            console.log("strokeEnd Ok");
+
+
+          } else if (datas[1] === "strokeUpdate") {
+            var x = datas[2] * 1;
+            var y = datas[3] * 1;
+            signaturePad._strokeUpdate2(x, y);
+            console.log("strokeUpdate Ok");
+
+          } else if (datas[1] === "clear") {
+            signaturePad.clear();
+            console.log("clear Ok");
+
+          };
+
+        };
+
+        
+        // alert([topic, payload].join(": "));
+        // client.end();
+      });
+
+      // client.publish("mqtt/demo", "hello world!");
+    </script>
+</body>
+</html>

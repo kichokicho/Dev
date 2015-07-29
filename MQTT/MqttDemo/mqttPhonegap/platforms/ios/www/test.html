@@ -1,0 +1,37 @@
+<html>
+<head>
+  <title>test Ws mqtt.js</title>
+  <link rel="stylesheet" href="css/signature-pad.css">
+</head>
+<body>
+
+<div id="signature-pad" class="m-signature-pad">
+    <div class="m-signature-pad--body">
+      <canvas></canvas>
+    </div>
+    <div class="m-signature-pad--footer">
+      <div class="description">Sign above</div>
+      <button class="button clear" data-action="clear">Clear</button>
+      <button class="button save" data-action="save">Save</button>
+    </div>
+  </div>
+  
+ <script src="js/signature_pad.js"></script>
+  <script src="js/app.js"></script> 
+
+<script src="js/browserMqtt.js"></script>
+<script>
+      // var client = mqtt.connect(); // you add a ws:// url here
+      client = mqtt.connect("tcp://127.0.0.1:8080"); 
+      // var client = mqtt.connect([{ host: '192.168.0.60', port: 1883 }]); 
+      client.subscribe("mqtt/demo");
+
+      // client.on("message", function(topic, payload) {
+      //   alert([topic, payload].join(": "));
+      //   client.end();
+      // });
+
+      client.publish("mqtt/demo", "hello world!");
+    </script>
+</body>
+</html>

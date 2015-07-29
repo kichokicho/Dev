@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<!--
+    Copyright (c) 2012-2014 Adobe Systems Incorporated. All rights reserved.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+        <link rel="stylesheet" type="text/css" href="css/index.css" />
+        <link rel="stylesheet" href="css/signature-pad.css">
+        <title>Hello World</title>
+    </head>
+    <body>
+        <div id="signature-pad" class="m-signature-pad">
+            <div class="m-signature-pad--body">
+                <canvas></canvas>
+            </div>
+            <div class="m-signature-pad--footer">
+                <div class="description">Sign above</div>
+                <button class="button clear" data-action="clear">Clear</button>
+                <button class="button save" data-action="save">Save</button>
+            </div>
+        </div>
+
+        <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/index.js"></script>
+        <script src="js/signature_pad3.js"></script>
+        <script src="js/app.js"></script>
+        
+        <script src="js/mqttws31.js"></script>
+        <script type="text/javascript">
+            app.initialize();
+        </script>
+        <script>
+            /** Websocket API. */
+            var client;
+            var connectOptions;
+
+            function connect() {   
+                try {
+                  var clientId = "ID" + Math.random();
+                    // client = new Messaging.Client("127.0.0.1", 8080, clientId);
+                    client = new Messaging.Client("192.168.0.10", 1883, clientId);
+                
+                    client.startTrace();
+                    client.onMessageArrived = onMessageArrived;
+                    client.onConnectionLost = onConnectionLost;
+                
+                    // Set values from the connect form.
+                    var connectForm = document.getElementById('connect');
+                    var connectOptions = new Object();
+                    connectOptions.timeout=5;
+                    connectOptions.cleanSession = true;
+                    connectOptions.keepAliveInterval = 60;
+                    
+                    // connectOptions.hosts = hosts;
+                    // connectOptions.ports = ports;
+                    // connectOptions.useSSL = connectForm.ssl.checked;
+                    connectOptions.onSuccess = function (responseObject) {
+                        console.log("connect Ok");
+                        subscribe();
+                    };
+                    connectOptions.onFailure = function (responseObject) { 
+                      console.log("connect onFailure");
+                      alert(responseObject.errorMessage);
+                    };
+                  
+                    client.connect(connectOptions);
+
+
+                
+                } catch (error) {
+                  console.log("error");
+                    alert(error.message);
+                }
+            } 
+
+            function subscribe() {
+              try {
+                  var options = {qos:0, 
+                                 onFailure: function(responseObject) {alert(responseObject.errorMessage);}};
+                  client.subscribe("mqtt/demo", options);
+                } catch (error) {
+                  console.log("subscribe error");
+                  alert(error.message);
+                } 
+                console.log("subscribe Ok");
+            }
+
+            function doSend(msg) {
+              try {
+                    message = new Messaging.Message(msg);
+               
+                    message.destinationName = "mqtt/demo";
+                    message.qos = 0;  
+                    client.send(message);
+              } catch (error) {
+                    alert(error.message);
+                } 
+                console.log("doSend Ok");
+            }
+
+            function onMessageArrived(message) {
+                console.log("onMessageArrived Ok");
+                var data = ""+ message.payloadString;
+                    var datas = data.split(',');
+                    var widTemp = datas[0] *1;
+                    console.log("widTemp::"+ widTemp);
+
+
+                    // if (widTemp != wid) {
+                      console.log("widTemp Not");
+                      if (datas[1] === "strokeDraw") {
+                        var x = datas[2] * 1;
+                        var y = datas[3] * 1;
+                        var size = datas[4] * 1;
+                        signaturePad._strokeDraw2(x, y, size);
+                        console.log("strokeDraw Ok");
+
+                      } else if (datas[1] === "strokeBegin") {
+                        var x = datas[2] * 1;
+                        var y = datas[3] * 1;
+                        signaturePad._strokeBegin2(x, y);
+                        console.log("strokeBegin Ok");
+              
+                      } else if (datas[1] === "strokeEnd") {
+                        signaturePad._strokeEnd2();
+                        console.log("strokeEnd Ok");
+
+
+                      } else if (datas[1] === "strokeUpdate") {
+                        var x = datas[2] * 1;
+                        var y = datas[3] * 1;
+                        signaturePad._strokeUpdate2(x, y);
+                        console.log("strokeUpdate Ok");
+
+                      // } else if (datas[1] === "clear") {
+                      //   signaturePad.clear();
+                      //   console.log("clear Ok");
+
+                      };
+                    // };
+
+                    if (datas[1] === "clear") {
+                      signaturePad.clear();
+                      console.log("clear Ok");
+                    };
+            }
+
+            function onConnectionLost(responseObject) {
+                var form = document.getElementById('connect');
+                console.log("onConnectionLost Ok");
+                if (responseObject.errorCode !== 0)
+                  alert(client.clientId+" disconnected error code="+responseObject.errorCode+" reason="+responseObject.errorMessage);
+            }
+
+
+            connect();
+          </script>
+
+    </body>
+</html>
